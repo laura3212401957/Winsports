@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { BrowserRouter as Router, Route, Routes, Link} from 'react-router';
 import Home from './componentes/Home'
 import Favoritos from './componentes/Favoritos'
@@ -12,7 +11,7 @@ function App() {
   return (
     <>
     <Router>
-       <nav className='c-menu'>
+       <nav className="c-menu">
           <Link to="/home">home</Link>
           <Link to="/favoritos">fav</Link>
           <Link to="/original">Org</Link>
@@ -25,7 +24,7 @@ function App() {
           <Route path='/original' element={<Original/>} />
           <Route path='/informativa' element={<Informativa/>} />
           <Route path='/usuarios' element={<Usuarios/>} />
-          <Route path='/' element={<Equipo/>} />
+          <Route path='/equipo/:equipo' element={<Equipo/>} />
         </Routes>
     </Router>
           </>
