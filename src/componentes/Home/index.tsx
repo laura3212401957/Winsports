@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
-import "./style.css"
+import { useState, useEffect, useContext } from 'react'
 import { Link } from 'react-router';
+import { EquiposContext } from '../../EquiposContexto';
+import "./style.css"
 
 interface Ranking {
   rank: number
@@ -47,16 +48,20 @@ function Home() {
   const [ranking, setRanking] = useState<Ranking[]>([])
   const [title, setTitle] = useState('')
 
+  const equiposMap = useContext(EquiposContext);
+
      //filtro
   const [filtro, setFiltro] = useState<FiltroTipo>('posiciones')
   const [estadisticas, setEstadisticas] = useState<Estadistica[]>([])
 
   const filtros: FiltroTipo[] = ['posiciones', 'goleador', 'asistencias', 'amarillas', 'atajadas']
+  const [busqueda, setBusqueda] = useState('')
 
   useEffect(() => {
+    setBusqueda('')
     const fetchData = async () => {
       try {
-        const res = await fetch('https://raw.githubusercontent.com/sdtibata/dataliga/refs/heads/main/${filtro}.json')
+        const res = await fetch(`https://raw.githubusercontent.com/sdtibata/dataliga/refs/heads/main/${filtro}.json`)
         const data = await res.json() // toma los datos de la url y los guarda en formato json
 
          if (filtro === 'posiciones') {
@@ -73,9 +78,15 @@ function Home() {
     fetchData()
   }, []) //se carga una vez
 
+const rankingFiltrado = ranking.filter((equipo) =>
+    busqueda.length < 3
+      ? true  // muestra todos si hay menos de 3 caracteres
+      : equipo.contestantName.toLowerCase().includes(busqueda.toLowerCase())
+  )
+
   return (
- <>
- <div className="filtros">
+    <>
+      <div className="filtros">
         {filtros.map((onestat) => (
           <button
             key={onestat}
@@ -87,33 +98,49 @@ function Home() {
         ))}
       </div>
 
-    <div className="tabla-container">
-      <h2>{title}</h2>
-      <table className="tabla-posiciones">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Equipo</th>
-            <th>PJ</th>
-            <th>Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ranking.map((equipo) => (
-            <tr key={equipo.rank}>
-              <td>{equipo.rank}</td>
-            <td>
-              <Link to={`/equipo/${equiposMap[equipo.contestantName] || "default"}`}>
+      <input
+        type="text"
+        placeholder="Buscar..."
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+      />
+
+      <div className="tabla-container">
+        <h2>{title}</h2>
+        {filtro === 'posiciones' ? (
+          <table className="tabla-posiciones">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Equipo</th>
+                <th>PJ</th>
+                <th>Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rankingFiltrado.map((equipo) => (
+                <tr key={equipo.rank}
+                    className={
+                      busqueda.length >= 3 &&
+                      equipo.contestantName.toLowerCase().includes(busqueda.toLowerCase())
+                        ? 'resaltado'
+                        : ''
+                    }
+                >
+                  <td>{equipo.rank}</td>
+                  <td>
+                        <Link to={`/equipo/${equiposMap[equipo.contestantName] || "default"}`}>
                         {equipo.contestantName}
                       </Link>
-            </td>
-              <td>{equipo.matchesPlayed}</td>
-              <td>{equipo.points}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <table className="tabla-estadisticas">
+                  </td>
+                  <td>{equipo.matchesPlayed}</td>
+                  <td>{equipo.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table className="tabla-estadisticas">
             <thead>
               <tr>
                 <th>#</th>
@@ -126,6 +153,13 @@ function Home() {
             <tbody>
               {estadisticas.map((jugador, index) => (
                 <tr key={index}
+                    className={
+                      busqueda.length >= 3 &&
+                      (jugador.name.toLowerCase().includes(busqueda.toLowerCase()) ||
+                      jugador.contestantName.toLowerCase().includes(busqueda.toLowerCase()))
+                        ? 'resaltado'
+                        : ''
+                    }
                 >
                   <td>{jugador.position}</td>
                   <td>{jugador.name}</td>
@@ -136,8 +170,10 @@ function Home() {
               ))}
             </tbody>
           </table>
+        )}
       </div>
     </>
+  
   )
 }
 
